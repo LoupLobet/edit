@@ -19,17 +19,23 @@ threadmain(int argc, char *argv[])
 		threadexitsall("bufcreate");
 	}
 	bufinsert(buf, "0123789", 7);
-	bufmovebackward(buf, 3);
+	bufmovebackwards(buf, 3);
 	bufinsert(buf, "456", 3);
 	printbuffer(buf);
 	bufmoveforward(buf, 3);
 	bufinsert(buf, "󰥓jes󰥓us", strlen("󰥓jes󰥓us"));
 	printbuffer(buf);
-	bufmovebackward(buf, 2);
+	bufmovebackwards(buf, 2);
 	printbuffer(buf);
-	bufdeleterunebefore(buf, 2);
-	bufmovebackward(buf, 2);
-	bufdeleterunebefore(buf, 2);
+	bufdeleterunebefore(buf, 1);
+	printbuffer(buf);
+	print("moved: %d\n", bufmoverunebackwards(buf, 5));
+	printbuffer(buf);
+	bufmoveruneforward(buf, 4);
+	printbuffer(buf);
+	bufdeleteruneafter(buf, 1);
+	printbuffer(buf);
+	bufdeleterunebefore(buf, 3);
 	printbuffer(buf);
 
 	buffree(buf);
