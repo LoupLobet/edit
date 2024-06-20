@@ -1,3 +1,11 @@
+#include <u.h>
+#include <libc.h>
+#include <draw.h>
+#include <mouse.h>
+#include <keyboard.h>
+
+#define STACK 65536
+
 typedef struct Buffer Buffer;
 
 struct Buffer {
@@ -21,3 +29,6 @@ uint	 bufmoveforward(Buffer *, uint);
 uint	 bufmoverunebackwards(Buffer *, uint);
 uint	 bufmoveruneforward(Buffer *, uint);
 uint	 bufresize(Buffer *);
+
+Mousectl *mctl;
+Keyboardctl *kctl;

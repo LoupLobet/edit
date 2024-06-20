@@ -1,70 +1,98 @@
 #include <u.h>
 #include <libc.h>
+#include <draw.h>
+#include <cursor.h>
+#include <keyboard.h>
+#include <mouse.h>
 #include <thread.h>
 
 #include "fns.h"
 #include "dat.h"
+#include "config.h"
 
-void	printbuffer(Buffer *);
+void	 keyboardthread(void *);
+void	 mousethread(void *);
+
+void
+keyboardthread(void *v)
+{
+	enum { Ekeyboard };
+	Rune r;
+	Alt alts[] = {
+		{ kctl->c, &r,  CHANRCV },
+		{ nil,     nil, CHANNOP },
+	};
+
+	threadsetname("keyboardthread");
+	for (;;) {
+		switch (alt(alts)) {
+		case Ekeyboard:
+			break;
+		}
+	}
+}
+
+void
+mousethread(void *v)
+{
+	enum { Emouse, Eresize };
+	Mouse *m;
+	Alt alts[] = {
+		{ mctl->c,       &m,  CHANRCV },
+		{ mctl->resizec, nil, CHANRCV },
+		{ nil,           nil, CHANNOP },
+	};
+	
+	threadsetname("mousethread");
+	for (;;) {
+		switch(alt(alts)) {
+		case Emouse:
+			break;
+		case Eresize:
+			resize();
+			break;
+		}
+	}
+}
+
+void
+resize(void) {
+
+}
 
 void
 threadmain(int argc, char *argv[])
 {
-	Buffer *buf;
+	Image *bg;
 
 	ARGBEGIN{
 	}ARGEND
-	if ((buf = bufcreate(32)) == nil) {
-		fprint(2, "edit: can't create new buffer");
-		threadexitsall("bufcreate");
-	}
-	bufinsert(buf, "0123789", 7);
-	bufmovebackwards(buf, 3);
-	bufinsert(buf, "456", 3);
-	printbuffer(buf);
-	bufmoveforward(buf, 3);
-	bufinsert(buf, "󰥓jes󰥓us", strlen("󰥓jes󰥓us"));
-	printbuffer(buf);
-	bufmovebackwards(buf, 2);
-	printbuffer(buf);
-	bufdeleterunebefore(buf, 1);
-	printbuffer(buf);
-	print("moved: %d\n", bufmoverunebackwards(buf, 5));
-	printbuffer(buf);
-	bufmoveruneforward(buf, 4);
-	printbuffer(buf);
-	bufdeleteruneafter(buf, 1);
-	printbuffer(buf);
-	bufdeleterunebefore(buf, 3);
-	printbuffer(buf);
 
-	buffree(buf);
+	initdraw(nil, nil, "edit");
+	if ((mctl = initmouse(nil, screen)) == nil) {
+		fprint(2, "can't initialize mouse: %r\n");
+		threadexitsall(nil);
+	}
+	if ((kctl = initkeyboard(nil)) == nil) {
+		fprint(2, "can't initialize keyboard: %r\n");
+		threadexitsall(nil);
+	}
+
+	flushimage(display, 1);
+	
+	if ((bg = allocimage(display, Rect(0, 0, 1, 1), RGBA32, 1, configcolors[BACKGROUND])) == nil) {
+		fprint(2, "can't create background image: %r\n");
+		threadexitsall(nil);
+	}
+
+	draw(screen, screen->r, bg, nil, ZP);
+
+	threadcreate(keyboardthread, nil, STACK);
+	threadcreate(mousethread, nil, STACK);
+	flushimage(display, Refnone);
+
+	for (;;);
 
 	threadexitsall(nil);
-}
-
-void
-printbuffer(Buffer *buf)
-{
-	int i;
-	int isgap;
-	Rune r;
-
-	isgap = 0;
-	for (i  = 0; i < buf->size; i++) {
-		if (buf->bob + i == buf->bog)
-			isgap = 1;
-		if (isgap)
-			print("_");
-		else {
-			print("%c", buf->bob + i);
-			i += chartorune(&r, buf->bob + i) - 1;
-			if (r != Runeerror)
-				print("%C", r);
-		}
-		if (buf->bob + i == buf->eog)
-			isgap = 0;
-	}
-	print("\n");
 }
 
