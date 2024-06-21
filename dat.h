@@ -7,6 +7,7 @@
 #define STACK 65536
 
 typedef struct Buffer Buffer;
+typedef struct View View;
 
 struct Buffer {
 	char *bob;
@@ -30,5 +31,15 @@ uint	 bufmoverunebackwards(Buffer *, uint);
 uint	 bufmoveruneforward(Buffer *, uint);
 uint	 bufresize(Buffer *);
 
+struct View {
+	Image *bg, *fg;
+	Image *cursor;
+	Buffer *buf;
+	char *name;
+};
+
+int	 viewdraw(View *);
+
 Mousectl *mctl;
 Keyboardctl *kctl;
+

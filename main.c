@@ -10,88 +10,129 @@
 #include "dat.h"
 #include "config.h"
 
-void	 keyboardthread(void *);
-void	 mousethread(void *);
+void	 keyboardevent(Rune);
+
+View mainvw;
+
+
+void	 keyboardevent(Rune);
 
 void
-keyboardthread(void *v)
+keyboardevent(Rune k)
 {
-	enum { Ekeyboard };
-	Rune r;
-	Alt alts[] = {
-		{ kctl->c, &r,  CHANRCV },
-		{ nil,     nil, CHANNOP },
-	};
+	char utf8[UTFmax];
+	int n;
 
-	threadsetname("keyboardthread");
-	for (;;) {
-		switch (alt(alts)) {
-		case Ekeyboard:
-			break;
-		}
+	switch (k) {
+	case Kleft:
+		bufmoverunebackwards(mainvw.buf, 1);
+		break;
+	case Kright:
+		bufmoveruneforward(mainvw.buf, 1);
+		break;
+	case Kup:
+		break;
+	case Kdown:
+		break;
+	case Kbs:
+		bufdeleterunebefore(mainvw.buf, 1);
+		break;
+	default:
+		// need to create a bufinsertrune() func
+		n = runetochar(utf8, &k);
+		bufinsert(mainvw.buf, utf8, n);
 	}
+	viewdraw(&mainvw);
 }
 
-void
-mousethread(void *v)
+int
+viewdraw(View *vw) 
 {
-	enum { Emouse, Eresize };
-	Mouse *m;
-	Alt alts[] = {
-		{ mctl->c,       &m,  CHANRCV },
-		{ mctl->resizec, nil, CHANRCV },
-		{ nil,           nil, CHANNOP },
-	};
-	
-	threadsetname("mousethread");
-	for (;;) {
-		switch(alt(alts)) {
-		case Emouse:
-			break;
-		case Eresize:
-			resize();
-			break;
-		}
-	}
-}
+	Point p = { confighmargin, configvmargin };
 
-void
-resize(void) {
-
+	draw(screen, screen->r, vw->bg, nil, ZP);
+	p = stringn(screen, p, vw->fg, ZP, display->defaultfont, vw->buf->bob, vw->buf->bog - vw->buf->bob);
+	draw(screen, screen->r, vw->cursor, nil, Pt(-p.x, -p.y));
+	stringn(screen, p, vw->fg, ZP, display->defaultfont, vw->buf->eog + 1, vw->buf->eob - vw->buf->eog);
+	flushimage(display, 1);
+	return 0;
 }
 
 void
 threadmain(int argc, char *argv[])
 {
-	Image *bg;
+	Rune r;
+	char *fontname = nil;
+	enum { Ekeyboard, Emouse, Eresize, NEALT };
+	Alt alts[NEALT+1];
 
 	ARGBEGIN{
+	case 'f':
+		fontname = ARGF();
+		if (fontname == nil)
+			goto Usage;
+		break;
+	default:
+	Usage:
+		fprint(2, "usage:\n");
 	}ARGEND
 
-	initdraw(nil, nil, "edit");
+	if (initdraw(nil, fontname, "edit") < 0) {
+		fprint(2, "can't initialize display: %r\n");
+		threadexitsall("initdraw");
+	}
 	if ((mctl = initmouse(nil, screen)) == nil) {
 		fprint(2, "can't initialize mouse: %r\n");
-		threadexitsall(nil);
+		threadexitsall("initmouse");
 	}
 	if ((kctl = initkeyboard(nil)) == nil) {
 		fprint(2, "can't initialize keyboard: %r\n");
-		threadexitsall(nil);
+		threadexitsall("initkeyboard");
 	}
 
 	flushimage(display, 1);
-	
-	if ((bg = allocimage(display, Rect(0, 0, 1, 1), RGBA32, 1, configcolors[BACKGROUND])) == nil) {
+
+	Image *bg, *fg, *cursor;
+	if ((bg = allocimage(display, Rect(0, 0, 1, 1), RGBA32, 1, configcolors[CBackground])) == nil) {
 		fprint(2, "can't create background image: %r\n");
-		threadexitsall(nil);
+		threadexitsall("allocimage");
+	}
+	if ((fg = allocimage(display, Rect(0, 0, 1, 1), RGBA32, 1, configcolors[CForeground])) == nil) {
+		fprint(2, "can't create foreground image: %r\n");
+		threadexitsall("allocimage");
+	}
+	if ((cursor = allocimage(display, Rect(0, 0, 1, display->defaultfont->height), RGBA32, 0, configcolors[CForeground])) == nil) {
+		fprint(2, "can't create cursor image: %r\n");
+		threadexitsall("allocimage");
 	}
 
-	draw(screen, screen->r, bg, nil, ZP);
+	mainvw.bg = bg;
+	mainvw.fg = fg;
+	mainvw.cursor = cursor;
+	mainvw.name = "main";
+	if ((mainvw.buf = bufcreate(512)) == nil) {
+		fprint(2, "can't create buffer: %d\n", 64);
+		threadexitsall("bufcreate");
+	}
+	viewdraw(&mainvw);
 
-	threadcreate(keyboardthread, nil, STACK);
-	threadcreate(mousethread, nil, STACK);
-	flushimage(display, Refnone);
+	alts[Ekeyboard] = (Alt){ kctl->c,       &r,        CHANRCV };
+	alts[Emouse]    = (Alt){ mctl->c,       &mctl->m,  CHANRCV };
+	alts[Eresize]   = (Alt){ mctl->resizec, nil,       CHANRCV };
+	alts[NEALT]     = (Alt){ nil,           nil,       CHANEND };
 
-	for (;;);
+	for (;;) {
+		switch (alt(alts)) {
+		case Ekeyboard:
+			keyboardevent(r);
+			break;
+		case Emouse:
+			break;
+		case Eresize:
+			break;
+		}
+	}
+
 
 	threadexitsall(nil);
 }
