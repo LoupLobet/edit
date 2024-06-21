@@ -180,7 +180,7 @@ bufdeleterunebefore(Buffer *buf, uint n)
 			return i;
 		/* find the last rune before the gap */
 		for (j = 0; j < 4; j++) {
-			if (buf->bog - 1 - j == buf->bob)
+			if (buf->bog - j == buf->bob)
 				return i;
 			runelen = chartorune(&r, buf->bog - 1 - j);
 			if (r == Runeerror)
