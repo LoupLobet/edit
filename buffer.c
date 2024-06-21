@@ -69,7 +69,7 @@ bufmoverunebackwards(Buffer *buf, uint n)
 			return moved;
 		/* find the last rune before the gap */
 		for (i = 0; i < 4; i++) {
-			if (buf->bog - 1 - i == buf->bob)
+			if (buf->bog - i == buf->bob)
 				return moved;
 			runelen = chartorune(&r, buf->bog - i - 1);
 			if (r == Runeerror)
