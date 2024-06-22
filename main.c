@@ -110,7 +110,7 @@ threadmain(int argc, char *argv[])
 	mainvw.fg = fg;
 	mainvw.cursor = cursor;
 	mainvw.name = "main";
-	if ((mainvw.buf = bufcreate(512)) == nil) {
+	if ((mainvw.buf = bufcreate(9)) == nil) {
 		fprint(2, "can't create buffer: %d\n", 64);
 		threadexitsall("bufcreate");
 	}
@@ -132,7 +132,6 @@ threadmain(int argc, char *argv[])
 			break;
 		}
 	}
-
 
 	threadexitsall(nil);
 }

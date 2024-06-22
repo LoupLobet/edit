@@ -206,23 +206,21 @@ uint
 bufresize(Buffer *buf)
 {
 	char *new;
-	uint newsize;
-	uint leftsize, gapsize, rightsize;
+	uint leftsize, newsize, rightsize;
+	uint gapsize;
 
-	newsize = (!buf->size ? 2 : buf->size * 2);
-	if ((new = realloc(buf->bob, newsize)) == nil)
-		return 0;
+	newsize = (buf->size < 1 ? 2 : buf->size * 2);
 	leftsize = buf->bog - buf->bob;
 	rightsize = buf->eob - buf->eog;
-	gapsize = newsize - buf->size + buf->gapsize;
-	if (leftsize > 0)
-		memcpy(new, buf->bob, leftsize);
-	if (rightsize > 0)
-		memcpy(new + leftsize + gapsize, buf->eog + 1, rightsize);
+	if ((new = realloc(buf->bob, newsize)) == nil)
+		return 0;
+	gapsize = newsize - (buf->size - buf->gapsize);
+	if (buf->eog != buf->eob)
+		memcpy(new + leftsize + gapsize, new + leftsize + buf->gapsize, rightsize);
 	buf->bob = new;
-	buf->bog = new + leftsize;
-	buf->eog = new + leftsize + gapsize - 1;
-	buf->eob = new + newsize;
+	buf->bog = buf->bob + leftsize;
+	buf->eog = buf->bog + gapsize - 1;
+	buf->eob = new + newsize - 1;
 	buf->size = newsize;
 	buf->gapsize = gapsize;
 	return newsize;
