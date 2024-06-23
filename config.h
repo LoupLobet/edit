@@ -10,3 +10,4 @@ int configcolors[] = {
 
 int confighmargin = 50;
 int configvmargin = 50;
+int tabsize = 4;

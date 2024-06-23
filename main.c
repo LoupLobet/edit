@@ -49,11 +49,37 @@ int
 viewdraw(View *vw) 
 {
 	Point p = { confighmargin, configvmargin };
+	int runelen;
+	char *x;
+	Rune k;
 
+	/* background */
 	draw(screen, screen->r, vw->bg, nil, ZP);
-	p = stringn(screen, p, vw->fg, ZP, display->defaultfont, vw->buf->bob, vw->buf->bog - vw->buf->bob);
-	draw(screen, screen->r, vw->cursor, nil, Pt(-p.x, -p.y));
-	stringn(screen, p, vw->fg, ZP, display->defaultfont, vw->buf->eog + 1, vw->buf->eob - vw->buf->eog);
+
+	/* text */
+	for (x = vw->buf->bob; x <= vw->buf->eob; x++) {
+		if (x == vw->buf->bog) {
+			draw(screen, screen->r, vw->cursor, nil, Pt(-p.x, -p.y));
+			if (vw->buf->eog == vw->buf->eob) {
+				x = vw->buf->eob;
+				continue;
+			} else
+				x = vw->buf->eog + 1;
+		}
+		switch (*x) {
+		case '\n':
+			p.y += display->defaultfont->height;
+			p.x = confighmargin;
+			break;
+		case '\t':
+			p.x += tabsize * display->defaultfont->width;
+			break;
+		default:
+			runelen = chartorune(&k, x);
+			//p = runestringn(screen, p, vw->fg, ZP, display->defaultfont, &k, runelen);
+			p = stringn(screen, p, vw->fg, ZP, display->defaultfont, x, runelen);
+		}
+	}
 	flushimage(display, 1);
 	return 0;
 }
@@ -110,10 +136,12 @@ threadmain(int argc, char *argv[])
 	mainvw.fg = fg;
 	mainvw.cursor = cursor;
 	mainvw.name = "main";
-	if ((mainvw.buf = bufcreate(9)) == nil) {
+	if ((mainvw.buf = bufcreate(32)) == nil) {
 		fprint(2, "can't create buffer: %d\n", 64);
 		threadexitsall("bufcreate");
 	}
+	bufinsert(mainvw.buf, "lol ƒ lol", strlen("lol ƒ lol"));
+	print("> %.*s\n", strlen("lol ƒ lol"), mainvw.buf->bob);
 	viewdraw(&mainvw);
 
 	alts[Ekeyboard] = (Alt){ kctl->c,       &r,        CHANRCV };
