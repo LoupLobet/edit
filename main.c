@@ -57,16 +57,17 @@ viewdraw(View *vw)
 	draw(screen, screen->r, vw->bg, nil, ZP);
 
 	/* text */
-	for (x = vw->buf->bob; x <= vw->buf->eob; x++) {
+	x = vw->buf->bob;
+	while (x <= vw->buf->eob) {
 		if (x == vw->buf->bog) {
 			draw(screen, screen->r, vw->cursor, nil, Pt(-p.x, -p.y));
 			if (vw->buf->eog == vw->buf->eob) {
-				x = vw->buf->eob;
-				continue;
+				break;
 			} else
 				x = vw->buf->eog + 1;
 		}
-		switch (*x) {
+		runelen = chartorune(&k, x);
+		switch (k) {
 		case '\n':
 			p.y += display->defaultfont->height;
 			p.x = confighmargin;
@@ -75,10 +76,9 @@ viewdraw(View *vw)
 			p.x += tabsize * display->defaultfont->width;
 			break;
 		default:
-			runelen = chartorune(&k, x);
 			p = runestringn(screen, p, vw->fg, ZP, display->defaultfont, &k, 1);
-			x += runelen - 1;
 		}
+		x += runelen;
 	}
 	flushimage(display, 1);
 	return 0;
