@@ -76,8 +76,8 @@ viewdraw(View *vw)
 			break;
 		default:
 			runelen = chartorune(&k, x);
-			//p = runestringn(screen, p, vw->fg, ZP, display->defaultfont, &k, runelen);
-			p = stringn(screen, p, vw->fg, ZP, display->defaultfont, x, runelen);
+			p = runestringn(screen, p, vw->fg, ZP, display->defaultfont, &k, 1);
+			x += runelen - 1;
 		}
 	}
 	flushimage(display, 1);
@@ -140,8 +140,7 @@ threadmain(int argc, char *argv[])
 		fprint(2, "can't create buffer: %d\n", 64);
 		threadexitsall("bufcreate");
 	}
-	bufinsert(mainvw.buf, "lol ƒ lol", strlen("lol ƒ lol"));
-	print("> %.*s\n", strlen("lol ƒ lol"), mainvw.buf->bob);
+	bufinsert(mainvw.buf, "󰿗 44 inch guns", strlen("󰿗 44 inch guns"));
 	viewdraw(&mainvw);
 
 	alts[Ekeyboard] = (Alt){ kctl->c,       &r,        CHANRCV };
