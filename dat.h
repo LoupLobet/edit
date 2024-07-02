@@ -41,6 +41,7 @@ struct View {
 	char *name;
 };
 
+View 	*viewcreate(char *);
 int	 viewdraw(View *);
 
 Mousectl *mctl;
