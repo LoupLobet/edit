@@ -11,3 +11,5 @@ int configcolors[] = {
 int confighmargin = 50;
 int configvmargin = 50;
 int tabsize = 4;
+
+char *configfontname = "/mnt/font/BlexMonoNF/13a/font";

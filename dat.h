@@ -18,6 +18,8 @@ struct Buffer {
 	uint size;
 };
 
+#define BufInitSize 64
+
 Buffer	*bufcreate(uint);
 uint	 bufdeleteafter(Buffer *, uint);
 uint	 bufdeleteruneafter(Buffer *, uint);
@@ -29,6 +31,7 @@ uint	 bufmovebackwards(Buffer *, uint);
 uint	 bufmoveforward(Buffer *, uint);
 uint	 bufmoverunebackwards(Buffer *, uint);
 uint	 bufmoveruneforward(Buffer *, uint);
+Buffer	*bufopen(char *);
 uint	 bufresize(Buffer *);
 
 struct View {

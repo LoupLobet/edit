@@ -202,6 +202,29 @@ buffree(Buffer *buf)
 	free(buf);
 }
 
+Buffer *
+bufopen(char *path)
+{
+	Buffer *buf;
+	Dir *dir;
+	int fd;
+
+	if ((dir = dirstat(path)) == nil)
+		return nil;
+	if ((buf = bufcreate(dir->length + BufInitSize)) == nil) {
+		free(dir);
+		return nil;
+	}
+	if ((fd = open(path, OREAD)) < 0)
+		return nil;
+	readn(fd, buf->bob, dir->length);
+	buf->bog = buf->bob + dir->length;
+	buf->gapsize -= dir->length;
+	close(fd);
+	free(dir);
+	return buf;
+}
+
 uint
 bufresize(Buffer *buf)
 {

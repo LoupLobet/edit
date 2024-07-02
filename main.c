@@ -92,6 +92,8 @@ threadmain(int argc, char *argv[])
 	enum { Ekeyboard, Emouse, Eresize, NEALT };
 	Alt alts[NEALT+1];
 
+	fontname = configfontname;
+
 	ARGBEGIN{
 	case 'f':
 		fontname = ARGF();
@@ -136,11 +138,18 @@ threadmain(int argc, char *argv[])
 	mainvw.fg = fg;
 	mainvw.cursor = cursor;
 	mainvw.name = "main";
-	if ((mainvw.buf = bufcreate(32)) == nil) {
-		fprint(2, "can't create buffer: %d\n", 64);
-		threadexitsall("bufcreate");
+	if (argc > 0) {
+		if ((mainvw.buf = bufopen(argv[0])) == nil) {
+			fprint(2, "can't open file: %s\n", argv[0]);
+			threadexitsall("bufopen");
+		}
+	} else {
+		if ((mainvw.buf = bufcreate(32)) == nil) {
+			fprint(2, "can't create buffer: %d\n", 64);
+			threadexitsall("bufcreate");
+		}
+		bufinsert(mainvw.buf, "󰿗 44 inch guns", strlen("󰿗 44 inch guns"));
 	}
-	bufinsert(mainvw.buf, "󰿗 44 inch guns", strlen("󰿗 44 inch guns"));
 	viewdraw(&mainvw);
 
 	alts[Ekeyboard] = (Alt){ kctl->c,       &r,        CHANRCV };
