@@ -217,8 +217,10 @@ bufopen(char *path)
 	}
 	if ((fd = open(path, OREAD)) < 0)
 		return nil;
-	readn(fd, buf->bob, dir->length);
-	buf->bog = buf->bob + dir->length;
+	/* buf->bob + BufInitSize to keep the cursor at line 0 */
+	readn(fd, buf->bob + BufInitSize, dir->length);
+	buf->bog = buf->bob;
+	buf->eog = buf->bob + BufInitSize - 1;
 	buf->gapsize -= dir->length;
 	close(fd);
 	free(dir);
